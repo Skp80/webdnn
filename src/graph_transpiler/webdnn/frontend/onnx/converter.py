@@ -1,5 +1,3 @@
-# -*- coding:utf-8 -*-
-
 """
 ONNX (https://github.com/onnx) Frontend
 """
@@ -27,6 +25,10 @@ except ImportError as e:
     pass
 
 
+def attribute_dict(proto: INodeProto):
+    return {attr.name: attr for attr in proto.attribute}
+
+
 class ONNXConverter(Converter["onnx.NodeProto"]):
     """ONNXConverter()"""
 
@@ -39,8 +41,11 @@ Module "onnx" cannot be imported. Please check that follow command works correct
 
 """)
 
+    def serialize_operator_type(self, proto: INodeProto):
+        return proto.op_type
+
     def convert(self, model: IModelProto) -> Graph:
-        """convert(inputs, outputs)
+        """convert(model)
 
         Convert ONNX computational graph into WebDNN IR.
 
@@ -76,14 +81,12 @@ Module "onnx" cannot be imported. Please check that follow command works correct
         return graph
 
     def _convert_operator(self, proto: INodeProto):
-        # FIXME: This is only for debug.
-        print(f"-----------------------------------------------------------")
-        print(f"Type  : {proto.op_type}")
-        print(f"Input : {proto.input}")
-        print(f"Output: {proto.output}")
-        for attr in proto.attribute:
-            val = getattr(attr, "ints", getattr(attr, "floats", getattr(attr, "i", getattr(attr, "f", None))))
-            print(f"Attr  : {attr.name} = {val}")
+        console.debug(f"-----------------------------------------------------------")
+        console.debug(f"Type  : {proto.op_type}")
+        console.debug(f"Input : {proto.input}")
+        console.debug(f"Output: {proto.output}")
+        for name, val in attribute_dict(proto).items():
+            console.debug(f"Attr  : {name} = {val}")
 
         super(ONNXConverter, self)._convert_operator(proto)
 
@@ -96,7 +99,7 @@ def _convert_tensor_proto(proto: ITensorProto) -> ConstantVariable:
     if np_type.type is None:
         raise TypeError(f"[ONNXConverter] type \"{np_type.name}\" is not supported")
 
-    data = np.frombuffer(proto.raw_data, np_type.type).reshape(proto.dims)
+    data = np.frombuffer(proto.raw_data, np_type.type).reshape([1] if len(proto.dims) == 0 else proto.dims)
     # noinspection PyTypeChecker
     return ConstantVariable(data, Order([AxisVar() for _ in range(data.ndim)]))
 
@@ -105,7 +108,7 @@ def _convert_value_info_proto(proto: IValueInfoProto) -> Variable:
     """
     Convert ValueInfoProto into variable.
     """
-    shape = [d.dim_value for d in proto.type.tensor_type.shape.dim]
+    shape = [1] if len(proto.type.tensor_type.shape.dim) == 0 else [d.dim_value for d in proto.type.tensor_type.shape.dim]
     # noinspection PyTypeChecker
     return Variable(shape, Order([AxisVar() for _ in shape]))
 

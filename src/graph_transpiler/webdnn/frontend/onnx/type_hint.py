@@ -94,6 +94,21 @@ class AttributeType:
     GRAPHS = 10
 
 
+AttributeTypeMappingDict = {
+    AttributeType.FLOAT: "f",
+    AttributeType.INT: "i",
+    AttributeType.STRING: "s",
+    AttributeType.TENSOR: "t",
+    AttributeType.GRAPH: "g",
+
+    AttributeType.FLOATS: "floats",
+    AttributeType.INTS: "ints",
+    AttributeType.STRINGS: "strings",
+    AttributeType.TENSORS: "tensors",
+    AttributeType.GRAPHS: "graphs",
+}
+
+
 class DataType:
     UNDEFINED = 0
     FLOAT = 1
@@ -137,5 +152,4 @@ DataTypeMappingDict = {
     DataType.UINT64: NumPyDataType("UINT64", np.uint64),
     DataType.COMPLEX64: NumPyDataType("COMPLEX64", None),
     DataType.COMPLEX128: NumPyDataType("COMPLEX128", None),
-
 }
